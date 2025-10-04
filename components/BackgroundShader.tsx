@@ -4,6 +4,7 @@ import { useRef, useMemo } from 'react';
 import { Canvas, useFrame, useLoader } from '@react-three/fiber';
 import { TextureLoader } from 'three';
 import * as THREE from 'three';
+import Delaunator from 'delaunator';
 
 interface TriangleData {
   finalPosition: THREE.Vector3;
@@ -11,121 +12,173 @@ interface TriangleData {
   rotation: number;
   delay: number;
   uvs: THREE.Vector2[];
+  velocity: THREE.Vector3;
+  prevPosition: THREE.Vector3;
 }
 
 function TriangularMesh({ scrollProgress }: { scrollProgress: number }) {
   const groupRef = useRef<THREE.Group>(null);
   const texture = useLoader(TextureLoader, '/background.png');
 
-  // Generate triangular pieces
+  // Generate triangular pieces using Delaunay triangulation
   const triangles = useMemo<TriangleData[]>(() => {
     const pieces: TriangleData[] = [];
-    const gridSize = 25; // More pieces for finer detail
     const aspectRatio = 3 / 4; // Portrait aspect ratio (container is 3:4)
     const width = 2;
     const height = width / aspectRatio; // This creates a 2 x 2.667 mesh
 
-    // Create a grid and divide into triangles
-    for (let row = 0; row < gridSize; row++) {
-      for (let col = 0; col < gridSize; col++) {
-        const x = (col / gridSize - 0.5) * width;
-        const y = (row / gridSize - 0.5) * height;
-        const w = width / gridSize;
-        const h = height / gridSize;
+    // Generate random points for Delaunay triangulation
+    const numPoints = 300; // Adjust for density of triangulation
+    const points: number[] = [];
 
-        const uv_x = col / gridSize;
-        const uv_y = row / gridSize; // Correct orientation
-        const uv_w = 1 / gridSize;
-        const uv_h = 1 / gridSize;
+    // Add corner points to ensure full coverage
+    points.push(-width/2, -height/2);
+    points.push(width/2, -height/2);
+    points.push(width/2, height/2);
+    points.push(-width/2, height/2);
 
-        // Center position of this cell
-        const centerX = x + w / 2;
-        const centerY = y + h / 2;
+    // Add random interior points
+    for (let i = 0; i < numPoints; i++) {
+      const x = (Math.random() - 0.5) * width;
+      const y = (Math.random() - 0.5) * height;
+      points.push(x, y);
+    }
 
-        // Create two triangles per grid cell
-        // Triangle 1 (top-left)
-        pieces.push({
-          finalPosition: new THREE.Vector3(centerX, centerY, 0),
-          offset: new THREE.Vector3(
-            (Math.random() - 0.5) * 6,
-            (Math.random() - 0.5) * 6,
-            (Math.random() - 0.5) * 3
-          ),
-          rotation: (Math.random() - 0.5) * Math.PI * 4,
-          delay: Math.random() * 0.3,
-          uvs: [
-            new THREE.Vector2(uv_x, uv_y),
-            new THREE.Vector2(uv_x + uv_w, uv_y),
-            new THREE.Vector2(uv_x, uv_y + uv_h),
-          ],
-        });
+    // Perform Delaunay triangulation
+    const delaunay = new Delaunator(points);
 
-        // Triangle 2 (bottom-right)
-        pieces.push({
-          finalPosition: new THREE.Vector3(centerX, centerY, 0),
-          offset: new THREE.Vector3(
-            (Math.random() - 0.5) * 6,
-            (Math.random() - 0.5) * 6,
-            (Math.random() - 0.5) * 3
-          ),
-          rotation: (Math.random() - 0.5) * Math.PI * 4,
-          delay: Math.random() * 0.3,
-          uvs: [
-            new THREE.Vector2(uv_x + uv_w, uv_y),
-            new THREE.Vector2(uv_x + uv_w, uv_y + uv_h),
-            new THREE.Vector2(uv_x, uv_y + uv_h),
-          ],
-        });
-      }
+    // Convert triangulation to our triangle format
+    for (let i = 0; i < delaunay.triangles.length; i += 3) {
+      const i0 = delaunay.triangles[i] * 2;
+      const i1 = delaunay.triangles[i + 1] * 2;
+      const i2 = delaunay.triangles[i + 2] * 2;
+
+      const p0 = new THREE.Vector2(points[i0], points[i0 + 1]);
+      const p1 = new THREE.Vector2(points[i1], points[i1 + 1]);
+      const p2 = new THREE.Vector2(points[i2], points[i2 + 1]);
+
+      // Calculate centroid for final position
+      const centerX = (p0.x + p1.x + p2.x) / 3;
+      const centerY = (p0.y + p1.y + p2.y) / 3;
+
+      // Convert world coordinates to UV coordinates (0-1 range)
+      const uv0 = new THREE.Vector2((p0.x / width) + 0.5, (p0.y / height) + 0.5);
+      const uv1 = new THREE.Vector2((p1.x / width) + 0.5, (p1.y / height) + 0.5);
+      const uv2 = new THREE.Vector2((p2.x / width) + 0.5, (p2.y / height) + 0.5);
+
+      const offset = new THREE.Vector3(
+        (Math.random() - 0.5) * 6,
+        (Math.random() - 0.5) * 6,
+        (Math.random() - 0.5) * 3
+      );
+      const startPos = new THREE.Vector3(centerX, centerY, 0).add(offset);
+
+      pieces.push({
+        finalPosition: new THREE.Vector3(centerX, centerY, 0),
+        offset: offset,
+        rotation: (Math.random() - 0.5) * Math.PI * 4,
+        delay: Math.random() * 0.3,
+        uvs: [uv0, uv1, uv2],
+        velocity: new THREE.Vector3(0, 0, 0),
+        prevPosition: startPos.clone(),
+      });
     }
 
     return pieces;
   }, []);
 
-  // Create meshes for each triangle
+  // Create meshes for each triangle based on Delaunay triangulation
   const triangleMeshes = useMemo(() => {
-    const gridSize = 25;
     const aspectRatio = 3 / 4;
     const width = 2;
     const height = width / aspectRatio;
-    const w = width / gridSize;
-    const h = height / gridSize;
 
-    // Create geometry centered at origin
-    const triGeometry1 = new THREE.BufferGeometry();
-    const vertices1 = new Float32Array([
-      -w / 2, -h / 2, 0,
-      w / 2, -h / 2, 0,
-      -w / 2, h / 2, 0,
-    ]);
-    triGeometry1.setAttribute('position', new THREE.BufferAttribute(vertices1, 3));
+    // Custom shader for motion blur effect
+    const motionBlurShader = {
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D map;
+        uniform float opacity;
+        uniform vec3 velocity;
+        varying vec2 vUv;
 
-    const triGeometry2 = new THREE.BufferGeometry();
-    const vertices2 = new Float32Array([
-      w / 2, -h / 2, 0,
-      w / 2, h / 2, 0,
-      -w / 2, h / 2, 0,
-    ]);
-    triGeometry2.setAttribute('position', new THREE.BufferAttribute(vertices2, 3));
+        void main() {
+          vec4 color = vec4(0.0);
+          float velocityMag = length(velocity);
+          float samples = 8.0;
 
-    return triangles.map((triangle, index) => {
-      // Alternate between two triangle orientations
-      const geometry = (index % 2 === 0 ? triGeometry1 : triGeometry2).clone();
+          // Only apply blur if velocity is significant
+          if (velocityMag > 0.001) {
+            float blurStrength = min(velocityMag * 0.01, 0.05); // Cap blur strength
+            vec2 blurDir = normalize(velocity.xy);
+
+            // Sample along the motion direction for blur effect
+            for (float i = 0.0; i < samples; i++) {
+              float offset = (i / (samples - 1.0) - 0.5) * blurStrength;
+              vec2 sampleUV = clamp(vUv - blurDir * offset, 0.0, 1.0);
+              color += texture2D(map, sampleUV);
+            }
+            color /= samples;
+          } else {
+            // No blur when stationary - just sample the texture directly
+            color = texture2D(map, vUv);
+          }
+
+          color.a *= opacity;
+          gl_FragColor = color;
+        }
+      `,
+    };
+
+    return triangles.map((triangle) => {
+      // Calculate relative positions from the centroid
+      const geometry = new THREE.BufferGeometry();
+
+      // Get the actual vertex positions relative to the centroid
+      const uv0 = triangle.uvs[0];
+      const uv1 = triangle.uvs[1];
+      const uv2 = triangle.uvs[2];
+
+      // Convert UV coordinates back to world coordinates (relative to centroid)
+      const x0 = (uv0.x - 0.5) * width - triangle.finalPosition.x;
+      const y0 = (uv0.y - 0.5) * height - triangle.finalPosition.y;
+      const x1 = (uv1.x - 0.5) * width - triangle.finalPosition.x;
+      const y1 = (uv1.y - 0.5) * height - triangle.finalPosition.y;
+      const x2 = (uv2.x - 0.5) * width - triangle.finalPosition.x;
+      const y2 = (uv2.y - 0.5) * height - triangle.finalPosition.y;
+
+      const vertices = new Float32Array([
+        x0, y0, 0,
+        x1, y1, 0,
+        x2, y2, 0,
+      ]);
+      geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
 
       // Set UVs for this specific triangle
-      const uvs = new Float32Array(6);
-      triangle.uvs.forEach((uv, i) => {
-        uvs[i * 2] = uv.x;
-        uvs[i * 2 + 1] = uv.y;
-      });
+      const uvs = new Float32Array([
+        uv0.x, uv0.y,
+        uv1.x, uv1.y,
+        uv2.x, uv2.y,
+      ]);
       geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
 
-      // Create unique material instance for each triangle
-      const material = new THREE.MeshBasicMaterial({
-        map: texture,
+      // Create shader material with motion blur
+      const material = new THREE.ShaderMaterial({
+        uniforms: {
+          map: { value: texture },
+          opacity: { value: 0 },
+          velocity: { value: new THREE.Vector3(0, 0, 0) },
+        },
+        vertexShader: motionBlurShader.vertexShader,
+        fragmentShader: motionBlurShader.fragmentShader,
         side: THREE.DoubleSide,
         transparent: true,
-        opacity: 0,
         depthWrite: false,
       });
 
@@ -149,15 +202,24 @@ function TriangularMesh({ scrollProgress }: { scrollProgress: number }) {
         // Easing function (ease-out quartic): starts fast, slows down at the end
         const eased = 1 - Math.pow(1 - pieceProgress, 4);
 
+        // Store previous position for velocity calculation
+        const prevPos = triangle.prevPosition.clone();
+
         // Interpolate position from offset to final position
         const startPos = new THREE.Vector3().copy(triangle.finalPosition).add(triangle.offset);
         mesh.position.lerpVectors(startPos, triangle.finalPosition, eased);
 
+        // Calculate velocity for motion blur
+        triangle.velocity.subVectors(mesh.position, prevPos);
+        triangle.prevPosition.copy(mesh.position);
+
         // Interpolate rotation
         mesh.rotation.z = triangle.rotation * (1 - eased);
 
-        // Fade in opacity from 0 to 100%
-        (mesh as THREE.Mesh).material.opacity = Math.min(1, eased);
+        // Update shader uniforms
+        const material = (mesh as THREE.Mesh).material as THREE.ShaderMaterial;
+        material.uniforms.opacity.value = Math.min(1, eased);
+        material.uniforms.velocity.value.copy(triangle.velocity);
       });
     }
   });
