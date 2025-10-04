@@ -1,8 +1,62 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform, useMotionValueEvent } from 'framer-motion';
 import Link from 'next/link';
+import { useRef, useState } from 'react';
 import WavyBackground from '@/components/WavyBackground';
+import BackgroundShader from '@/components/BackgroundShader';
+
+function HeadshotSection() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [bgProgress, setBgProgress] = useState(0);
+
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start end", "end start"]
+  });
+
+  // Headshot fades in quickly (0-0.2 of scroll)
+  const headshotOpacity = useTransform(scrollYProgress, [0, 0.2], [0, 1]);
+
+  // Background triangles fall into place quickly (0.2-0.4 of scroll = 1/5 of image)
+  const backgroundProgress = useTransform(scrollYProgress, [0.2, 0.4], [0, 1]);
+
+  // Update state when motion value changes
+  useMotionValueEvent(backgroundProgress, "change", (latest) => {
+    setBgProgress(latest);
+  });
+
+  return (
+    <div ref={containerRef} className="flex flex-col gap-4 relative w-full" style={{ maxWidth: '400px' }}>
+      {/* Container for layered images */}
+      <div className="relative border-4 border-black overflow-hidden aspect-[3/4]">
+        {/* Background shader layer - fills entire container */}
+        <div className="absolute inset-0">
+          <BackgroundShader scrollProgress={bgProgress} />
+        </div>
+
+        {/* Headshot layer - positioned near bottom, centered horizontally, 125% size */}
+        <div className="absolute inset-x-0 bottom-0 flex justify-center items-end">
+          <motion.img
+            src="/headshotTransparent.png"
+            alt="Headshot"
+            className="relative z-10 h-full w-auto object-contain"
+            style={{
+              opacity: headshotOpacity,
+              transform: 'translateX(60px) translateY(-177.5px) scale(2)'
+            }}
+          />
+        </div>
+      </div>
+      <p
+        className="text-2xl font-black text-center"
+        style={{ fontFamily: "var(--font-bebas-neue)" }}
+      >
+        WHAT I LOOK LIKE
+      </p>
+    </div>
+  );
+}
 
 export default function Home() {
   return (
@@ -121,7 +175,7 @@ export default function Home() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
           viewport={{ once: true }}
-          className="max-w-4xl"
+          className="max-w-7xl w-full"
         >
           <h2
             className="text-8xl font-black mb-12"
@@ -129,34 +183,39 @@ export default function Home() {
           >
             ABOUT
           </h2>
-          <div className="space-y-6 text-xl leading-relaxed">
-            <p>
-              I'm a graduate student at the MIT Media Lab, working under Deb Roy, where my research focuses on
-              computational methods to improve human deliberation. At the core of my work is a deep frustration:
-              how difficult it is to get even 50 people in a room to make a genuinely good decision together.
-            </p>
-            <p>
-              So much of modern life is regulated by unexamined norms and taboos that prevent rational collective action.
-              History shows us that strong forums and deliberation protocols can change this.
-            </p>
-            <div className="pt-8">
-              <h3 className="text-3xl font-bold mb-4">Current Research:</h3>
-              <ul className="space-y-4">
-                <li className="flex items-start gap-3">
-                  <span className="text-2xl">→</span>
-                  <span>
-                    In organizations, how can we scalably train people—using LLMs—to be more comfortable with
-                    and open to difficult conversations?
-                  </span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-2xl">→</span>
-                  <span>
-                    Can we design argument-mapping systems that tangibly improve the decision-making quality
-                    of large-scale human groups?
-                  </span>
-                </li>
-              </ul>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+            <div className="space-y-6 text-xl leading-relaxed">
+              <p>
+                I'm a graduate student at the MIT Media Lab, working under Deb Roy, where my research focuses on
+                computational methods to improve human deliberation. At the core of my work is a deep frustration:
+                how difficult it is to get even 50 people in a room to make a genuinely good decision together.
+              </p>
+              <p>
+                So much of modern life is regulated by unexamined norms and taboos that prevent rational collective action.
+                History shows us that strong forums and deliberation protocols can change this.
+              </p>
+              <div className="pt-8">
+                <h3 className="text-3xl font-bold mb-4">Current Research:</h3>
+                <ul className="space-y-4">
+                  <li className="flex items-start gap-3">
+                    <span className="text-2xl">→</span>
+                    <span>
+                      In organizations, how can we scalably train people—using LLMs—to be more comfortable with
+                      and open to difficult conversations?
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-2xl">→</span>
+                    <span>
+                      Can we design argument-mapping systems that tangibly improve the decision-making quality
+                      of large-scale human groups?
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div className="flex justify-center lg:justify-start">
+              <HeadshotSection />
             </div>
           </div>
         </motion.div>
