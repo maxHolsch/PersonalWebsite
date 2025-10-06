@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRef, useState } from 'react';
 import WavyBackground from '@/components/WavyBackground';
 import BackgroundShader from '@/components/BackgroundShader';
+import HorizontalScrollProjects from '@/components/HorizontalScrollProjects';
 
 function HeadshotSection() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -221,60 +222,8 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* Work Section */}
-      <section id="work" className="min-h-screen flex items-center justify-center px-6 py-20 relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
-          className="max-w-6xl w-full"
-        >
-          <h2
-            className="text-8xl font-black mb-12"
-            style={{ fontFamily: "var(--font-bebas-neue)" }}
-          >
-            WORK
-          </h2>
-          <div className="grid md:grid-cols-2 gap-8">
-            {[
-              {
-                title: 'DEBATING ROBOT',
-                desc: 'AI-powered debate training system for improving argumentation skills',
-              },
-              {
-                title: 'SOCRATIC SCIENCES TOOL',
-                desc: 'Argument mapping platform for structured reasoning',
-              },
-              {
-                title: 'AI WITH MAX',
-                desc: 'Educational AI collaboration and learning platform',
-              },
-              {
-                title: 'WRITING & POLICY',
-                desc: 'Research exploring deliberative democracy and decision-making',
-              },
-            ].map((project, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
-                viewport={{ once: true }}
-                className="group p-8 border-4 border-black hover:bg-black hover:text-pink-primary transition-all cursor-pointer"
-              >
-                <h3
-                  className="text-4xl font-black mb-3"
-                  style={{ fontFamily: "var(--font-bebas-neue)" }}
-                >
-                  {project.title}
-                </h3>
-                <p className="text-lg">{project.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      </section>
+      {/* Work Section - Horizontal Scroll */}
+      <HorizontalScrollProjects />
 
       {/* Contact Section */}
       <section id="contact" className="min-h-screen flex items-center justify-center px-6 py-20 relative z-10">
