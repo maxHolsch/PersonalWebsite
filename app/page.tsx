@@ -304,6 +304,15 @@ export default function Home() {
             >
               EMAIL ME
             </a>
+            <a
+              href="https://calendar.app.google/sit8HiR3fjzjsMRF6"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-12 py-6 bg-black text-pink-primary text-2xl font-black hover:opacity-80 transition-opacity"
+              style={{ fontFamily: "var(--font-bebas-neue)" }}
+            >
+              BOOK A MEETING
+            </a>
           </div>
         </motion.div>
       </section>
