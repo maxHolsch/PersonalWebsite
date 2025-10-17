@@ -293,7 +293,7 @@ export default function Home() {
           </p>
           <div className="flex justify-center gap-6">
             <a
-              href="mailto:contact@example.com"
+              href="mailto:mpholsch@mit.edu"
               className="px-12 py-6 bg-black text-pink-primary text-2xl font-black hover:opacity-80 transition-opacity"
               style={{ fontFamily: "var(--font-bebas-neue)" }}
             >
