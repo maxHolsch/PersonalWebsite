@@ -6,6 +6,7 @@ import { useRef, useState } from 'react';
 import WavyBackground from '@/components/WavyBackground';
 import BackgroundShader from '@/components/BackgroundShader';
 import HorizontalScrollProjects from '@/components/HorizontalScrollProjects';
+import RippleText from '@/components/RippleText';
 
 function HeadshotSection() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -205,11 +206,18 @@ export default function Home() {
           className="text-center"
         >
           <h1
-            className="text-[12rem] leading-[0.85] tracking-tighter font-black"
-            style={{ fontFamily: "var(--font-bebas-neue)" }}
+            className="text-[12rem] font-black"
+            style={{
+              fontFamily: "var(--font-bebas-neue)",
+              lineHeight: '0.85',
+              letterSpacing: '0.00em',
+              WebkitFontSmoothing: 'antialiased',
+              MozOsxFontSmoothing: 'grayscale'
+            }}
           >
-            Solve Deliberation<br />
-            Use It To Solve Everything Else
+            <div><RippleText text="Solve Deliberation," /></div>
+            <div>Use It To Solve</div>
+            <div><RippleText text="Everything Else." /></div>
           </h1>
         </motion.div>
       </section>
@@ -230,7 +238,7 @@ export default function Home() {
             ABOUT
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-            <div className="space-y-6 text-xl leading-relaxed">
+            <div className="space-y-6 text-xl leading-relaxed font-medium">
               <p>
                 I&apos;m a graduate student at the MIT Media Lab, working under Deb Roy, where my research focuses on
                 computational methods to improve human deliberation. At the core of my work is a deep frustration:
@@ -246,7 +254,7 @@ export default function Home() {
                   <li className="flex items-start gap-3">
                     <span className="text-2xl">→</span>
                     <span>
-                      In organizations, how can we scalably train people—using LLMs—to be more comfortable with
+                      In organizations, how can we scalably train people to be more comfortable with
                       and open to difficult conversations?
                     </span>
                   </li>
