@@ -2,7 +2,7 @@
 
 import { motion, useScroll, useTransform, MotionValue } from 'framer-motion';
 import Link from 'next/link';
-import { useRef, useState, forwardRef } from 'react';
+import { useRef, useState, forwardRef, type ForwardedRef, type MutableRefObject } from 'react';
 import { projects } from '@/lib/projectsData';
 import Starfield from './Starfield';
 import Image from 'next/image';
@@ -183,8 +183,8 @@ function ProjectDot({ project, index, scrollYProgress, onHover, isHovered }: Pro
   );
 }
 
-const HorizontalScrollProjects = forwardRef<HTMLElement>(function HorizontalScrollProjects(props, ref) {
-  const internalRef = useRef<HTMLElement>(null);
+const HorizontalScrollProjects = forwardRef<HTMLElement>(function HorizontalScrollProjects(props, ref: ForwardedRef<HTMLElement>) {
+  const internalRef = useRef<HTMLElement | null>(null);
   const [hoveredDot, setHoveredDot] = useState<number | null>(null);
 
   const { scrollYProgress } = useScroll({
@@ -203,11 +203,11 @@ const HorizontalScrollProjects = forwardRef<HTMLElement>(function HorizontalScro
 
   // Combine refs so both internal and forwarded refs work
   const setRefs = (el: HTMLElement | null) => {
-    (internalRef as any).current = el;
+    internalRef.current = el;
     if (typeof ref === 'function') {
       ref(el);
     } else if (ref) {
-      (ref as any).current = el;
+      (ref as MutableRefObject<HTMLElement | null>).current = el;
     }
   };
 
