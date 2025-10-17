@@ -190,7 +190,7 @@ export default function Home() {
             </div>
             <div className="text-right">
               <p className="font-medium">Coding from Cambridge, MA</p>
-              <p>Contact me</p>
+              <p></p>
             </div>
           </motion.div>
         </div>
