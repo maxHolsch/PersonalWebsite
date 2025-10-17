@@ -202,7 +202,7 @@ export default function Home() {
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
+          transition={{ duration: 2.0, delay: 1.2 }}
           className="text-center"
         >
           <h1
