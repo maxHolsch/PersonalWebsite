@@ -2,7 +2,12 @@
 
 import { useEffect, useRef } from 'react';
 
-export default function WavyBackground() {
+interface WavyBackgroundProps {
+  dampening?: number; // 0 = full waves, 1 = completely straight/dampened
+  opacity?: number; // For fading out
+}
+
+export default function WavyBackground({ dampening = 0, opacity = 1 }: WavyBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -48,8 +53,17 @@ export default function WavyBackground() {
       ctx.strokeStyle = '#E60038';
       ctx.lineWidth = 1.5;
 
-      const numLines = 150;
-      const spacing = canvas.height / numLines;
+      // Adjust line spacing based on dampening - converge to 20px grid
+      const baseSpacing = canvas.height / 150;
+      const gridSpacing = 20;
+      const spacing = baseSpacing + (gridSpacing - baseSpacing) * dampening;
+      const numLines = Math.ceil(canvas.height / spacing);
+
+      // Apply ease-in cubic curve for non-linear animation (slow start, faster end)
+      // Normalize time to 0-1 range using modulo, then apply cubic easing
+      const normalizedTime = (time % 10) / 10; // cycle every 10 seconds
+      const easedTime = Math.pow(normalizedTime, 3) * 10; // cubic ease-in
+      const animTime = (Math.floor(time / 10) * 10) + easedTime; // combine with full cycles
 
       for (let i = 0; i < numLines; i++) {
         const y = i * spacing;
@@ -63,13 +77,18 @@ export default function WavyBackground() {
           );
           const mouseInfluence = Math.max(0, 1 - distanceFromMouse / 300);
 
-          const waveAmplitude = 30 + mouseInfluence * 50;
-          const waveFrequency = 0.002;
+          // Dampen wave amplitude - reduces to 0 as dampening approaches 1
+          const baseAmplitude = 30 + mouseInfluence * 50;
+          const waveAmplitude = baseAmplitude * (1 - dampening);
 
+          // Reduce wave frequency as dampening increases
+          const waveFrequency = 0.002 * (1 - dampening * 0.8);
+
+          // Apply dampening to all wave components, use easedTime for non-linear animation
           const offset =
-            Math.sin(x * waveFrequency + time * 0.5 + i * 0.1) * waveAmplitude +
-            noise(x, y, time * 0.3) * 20 +
-            Math.cos(x * 0.001 + time * 0.3) * 15;
+            Math.sin(x * waveFrequency + animTime * 0.5 + i * 0.1) * waveAmplitude +
+            noise(x, y, animTime * 0.3) * 20 * (1 - dampening) +
+            Math.cos(x * 0.001 + animTime * 0.3) * 15 * (1 - dampening);
 
           const yPos = y + offset;
 
@@ -83,7 +102,7 @@ export default function WavyBackground() {
         ctx.stroke();
       }
 
-      time += 0.01;
+      time += 0.006;
       animationFrame = requestAnimationFrame(draw);
     };
 
@@ -94,13 +113,13 @@ export default function WavyBackground() {
       window.removeEventListener('mousemove', handleMouseMove);
       cancelAnimationFrame(animationFrame);
     };
-  }, []);
+  }, [dampening]);
 
   return (
     <canvas
       ref={canvasRef}
       className="fixed top-0 left-0 w-full h-full pointer-events-none"
-      style={{ zIndex: 0 }}
+      style={{ zIndex: 0, opacity }}
     />
   );
 }

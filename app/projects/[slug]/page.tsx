@@ -186,7 +186,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
       {/* Footer */}
       <footer className="border-t-4 border-black py-8 relative z-10">
         <div className="max-w-7xl mx-auto px-6 text-center">
-          <p className="font-bold">© 2024 MIT MEDIA LAB</p>
+          <p className="font-bold">2025 MIT MEDIA LAB</p>
         </div>
       </footer>
     </main>

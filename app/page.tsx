@@ -60,9 +60,57 @@ function HeadshotSection() {
 }
 
 export default function Home() {
+  const aboutSectionRef = useRef<HTMLElement>(null);
+  const workSectionRef = useRef<HTMLElement>(null);
+  const [waveDampening, setWaveDampening] = useState(0);
+  const [waveOpacity, setWaveOpacity] = useState(1);
+
+  // Track scroll through About section to dampen waves
+  const { scrollYProgress: aboutProgress } = useScroll({
+    target: aboutSectionRef,
+    offset: ["start end", "end start"]
+  });
+
+  // Track scroll through Work section to restore waves
+  const { scrollYProgress: workProgress } = useScroll({
+    target: workSectionRef,
+    offset: ["start start", "end end"]
+  });
+
+  // Dampen waves as we scroll through About section (70% -> 120%)
+  const aboutDampening = useTransform(aboutProgress, [0.7, 1.2], [0, 1]);
+  const aboutOpacity = useTransform(aboutProgress, [1.1, 1.3], [1, 0]);
+
+  // Restore waves after Work section (85% -> 100% of Work section scroll)
+  const workDampening = useTransform(workProgress, [0.85, 1.0], [1, 0]);
+  const workOpacity = useTransform(workProgress, [0.85, 1.0], [0, 1]);
+
+  // Combine both scroll effects
+  // Dampening: multiply to get 0 (wavy) -> 1 (straight) -> 0 (wavy)
+  // Opacity: max to get 1 (visible) -> 0 (hidden) -> 1 (visible)
+  useMotionValueEvent(aboutDampening, "change", (aboutDamp) => {
+    const workDamp = workDampening.get();
+    setWaveDampening(aboutDamp * workDamp);
+  });
+
+  useMotionValueEvent(workDampening, "change", (workDamp) => {
+    const aboutDamp = aboutDampening.get();
+    setWaveDampening(aboutDamp * workDamp);
+  });
+
+  useMotionValueEvent(aboutOpacity, "change", (aboutOp) => {
+    const workOp = workOpacity.get();
+    setWaveOpacity(Math.max(aboutOp, workOp));
+  });
+
+  useMotionValueEvent(workOpacity, "change", (workOp) => {
+    const aboutOp = aboutOpacity.get();
+    setWaveOpacity(Math.max(aboutOp, workOp));
+  });
+
   return (
     <main className="min-h-screen relative">
-      <WavyBackground />
+      <WavyBackground dampening={waveDampening} opacity={waveOpacity} />
 
       {/* Top Navigation Bar */}
       <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4">
@@ -144,8 +192,8 @@ export default function Home() {
               </div>
             </div>
             <div className="text-right">
-              <p className="font-medium">Coding globally from Taiwan</p>
-              <p>Available for freelance work - Hire me</p>
+              <p className="font-medium">Coding from Cambridge, MA</p>
+              <p>Contact me</p>
             </div>
           </motion.div>
         </div>
@@ -163,14 +211,14 @@ export default function Home() {
             className="text-[12rem] leading-[0.85] tracking-tighter font-black"
             style={{ fontFamily: "var(--font-bebas-neue)" }}
           >
-            CREATIVE +<br />
-            DEVELOPER
+            Solve Deliberation<br />
+            Use It To Solve Everything Else
           </h1>
         </motion.div>
       </section>
 
       {/* About Section */}
-      <section id="about" className="min-h-screen flex items-center justify-center px-6 py-20 relative z-10">
+      <section ref={aboutSectionRef} id="about" className="min-h-screen flex items-center justify-center px-6 py-20 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -187,7 +235,7 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
             <div className="space-y-6 text-xl leading-relaxed">
               <p>
-                I'm a graduate student at the MIT Media Lab, working under Deb Roy, where my research focuses on
+                I&apos;m a graduate student at the MIT Media Lab, working under Deb Roy, where my research focuses on
                 computational methods to improve human deliberation. At the core of my work is a deep frustration:
                 how difficult it is to get even 50 people in a room to make a genuinely good decision together.
               </p>
@@ -223,7 +271,7 @@ export default function Home() {
       </section>
 
       {/* Work Section - Horizontal Scroll */}
-      <HorizontalScrollProjects />
+      <HorizontalScrollProjects ref={workSectionRef} />
 
       {/* Contact Section */}
       <section id="contact" className="min-h-screen flex items-center justify-center px-6 py-20 relative z-10">
@@ -238,7 +286,7 @@ export default function Home() {
             className="text-8xl font-black mb-8"
             style={{ fontFamily: "var(--font-bebas-neue)" }}
           >
-            LET'S TALK
+            LET&apos;S TALK
           </h2>
           <p className="text-2xl mb-12">
             Interested in collaboration or want to learn more about my research?
@@ -258,7 +306,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t-4 border-black py-8 relative z-10">
         <div className="max-w-7xl mx-auto px-6 text-center">
-          <p className="font-bold">© 2024 MIT MEDIA LAB</p>
+          <p className="font-bold">LAST UPDATED OCT 2025 @ THE MIT MEDIA LAB</p>
         </div>
       </footer>
     </main>

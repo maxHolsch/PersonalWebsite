@@ -19,8 +19,16 @@ const bebasNeue = Bebas_Neue({
 });
 
 export const metadata: Metadata = {
-  title: "Portfolio | MIT Media Lab",
+  title: "MIT Media Lab | Portfolio",
   description: "Graduate student at MIT Media Lab working on computational methods to improve human deliberation.",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    other: [
+      { rel: "mask-icon", url: "/safari-pinned-tab.svg" },
+    ],
+  },
 };
 
 export default function RootLayout({
